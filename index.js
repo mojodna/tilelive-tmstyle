@@ -72,6 +72,9 @@ var style = function(uri, callback) {
       return callback(err);
     }
 
+    // override the scale if necessary
+    data.scale = +uri.query.scale || data.scale;
+
     return style.toXML(data, function(err, xml) {
       if (err) {
         return callback(err);
