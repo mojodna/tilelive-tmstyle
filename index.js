@@ -72,7 +72,7 @@ var style = function(uri, callback) {
       return callback(err);
     }
 
-    // override the scale if necessary
+    // override properties if necessary
     data.scale = +uri.query.scale || data.scale;
 
     return style.toXML(data, function(err, xml) {
@@ -84,6 +84,14 @@ var style = function(uri, callback) {
         xml: xml,
         base: process.cwd()
       };
+
+      if ("tileWidth" in uri.query) {
+        opts.tileWidth = uri.query.tileWidth | 0;
+      }
+
+      if ("tileHeight" in uri.query) {
+        opts.tileHeight = uri.query.tileHeight | 0;
+      }
 
       return new Vector(opts, callback);
     });
