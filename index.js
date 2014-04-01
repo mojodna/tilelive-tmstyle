@@ -93,6 +93,15 @@ var style = function(uri, callback) {
         opts.tileHeight = uri.query.tileHeight | 0;
       }
 
+      if ("scaleMatchesZoom" in uri.query) {
+        if (uri.query.scaleMatchesZoom === true ||
+            uri.query.scaleMatchesZoom === "true") {
+          opts.scaleMatchesZoom = true;
+        } else {
+          opts.scaleMatchesZoom = false;
+        }
+      }
+
       return new Vector(opts, callback);
     });
   });
