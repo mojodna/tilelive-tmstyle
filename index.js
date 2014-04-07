@@ -66,6 +66,7 @@ tm.sortkeys = function(obj) {
 
 var style = function(uri, callback) {
   uri = url.parse(uri || "");
+  uri.query = uri.query || {};
 
   return style.info(function(err, data) {
     if (err) {
