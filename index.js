@@ -68,7 +68,9 @@ var style = function(uri, callback) {
   uri = url.parse(uri || "");
   uri.query = uri.query || {};
 
-  return style.info(function(err, data) {
+  var fname = this.filename = path.join(uri.hostname + uri.pathname, "project.yml");
+
+  return this.info(function(err, data) {
     if (err) {
       return callback(err);
     }
@@ -83,7 +85,7 @@ var style = function(uri, callback) {
 
       var opts = {
         xml: xml,
-        base: process.cwd()
+        base: path.dirname(fname)
       };
 
       if ("tileWidth" in uri.query) {
@@ -109,8 +111,10 @@ var style = function(uri, callback) {
 };
 
 
-style.info = function(callback) {
-  return fs.readFile(path.join(process.cwd(), "project.yml"), "utf8", function(err, data) {
+style.prototype.info = function(callback) {
+  var fname = this.filename;
+
+  return fs.readFile(fname, "utf8", function(err, data) {
     if (err) {
       return callback(err);
     }
@@ -122,7 +126,7 @@ style.info = function(callback) {
     }
 
     return async.map(data.styles, function(filename, next) {
-      return fs.readFile(path.join(process.cwd(), filename), "utf8", function(err, mss) {
+      return fs.readFile(path.join(path.dirname(fname), filename), "utf8", function(err, mss) {
         return next(null, [filename, mss]);
       });
     }, function(err, styles) {
