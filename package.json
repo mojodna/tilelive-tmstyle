@@ -6,7 +6,10 @@
     "js-yaml": "~3.0.2",
     "carto": "~0.9.5",
     "async": "~0.2.10",
-    "tilelive-vector": "git://github.com/mojodna/tilelive-vector.git#tilelive-injection",
     "underscore": "~1.6.0"
+  },
+  "peerDependencies": {
+    "tilelive": "^4.5.3",
+    "tilelive-vector": "^0.12.1"
   }
 }

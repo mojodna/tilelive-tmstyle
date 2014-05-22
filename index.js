@@ -7,12 +7,10 @@ var fs = require("fs"),
 var _ = require("underscore"),
     async = require("async"),
     carto = require("carto"),
-    yaml = require("js-yaml"),
-    tileliveVector = require("tilelive-vector");
+    yaml = require("js-yaml");
 
 // lazy-load when initialized (to share a common tilelive)
-var tilelive,
-    Vector;
+var tilelive;
 
 var defaults = {
   name:'',
@@ -84,6 +82,7 @@ var style = function(uri, callback) {
       }
 
       var opts = {
+        protocol: "vector:",
         xml: xml,
         base: path.dirname(fname)
       };
@@ -105,7 +104,7 @@ var style = function(uri, callback) {
         }
       }
 
-      return new Vector(opts, callback);
+      return tilelive.load(opts, callback);
     });
   });
 };
@@ -232,7 +231,6 @@ style.registerProtocols = function(tilelive) {
 
 module.exports = function(_tilelive, options) {
   tilelive = _tilelive;
-  Vector = tileliveVector(tilelive);
 
   style.registerProtocols(tilelive);
 
