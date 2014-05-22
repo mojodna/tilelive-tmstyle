@@ -1,6 +1,6 @@
 {
   "name": "tilelive-tmstyle",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A tilelive.js source for tmstyle:// URIs",
   "dependencies": {
     "js-yaml": "~3.0.2",
