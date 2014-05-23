@@ -84,25 +84,9 @@ var style = function(uri, callback) {
       var opts = {
         protocol: "vector:",
         xml: xml,
-        base: path.dirname(fname)
+        base: path.dirname(fname),
+        scale: data.scale
       };
-
-      if ("tileWidth" in uri.query) {
-        opts.tileWidth = uri.query.tileWidth | 0;
-      }
-
-      if ("tileHeight" in uri.query) {
-        opts.tileHeight = uri.query.tileHeight | 0;
-      }
-
-      if ("scaleMatchesZoom" in uri.query) {
-        if (uri.query.scaleMatchesZoom === true ||
-            uri.query.scaleMatchesZoom === "true") {
-          opts.scaleMatchesZoom = true;
-        } else {
-          opts.scaleMatchesZoom = false;
-        }
-      }
 
       return tilelive.load(opts, callback);
     });
