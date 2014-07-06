@@ -12,8 +12,8 @@
   },
   "dependencies": {
     "js-yaml": "~3.0.2",
-    "carto": "~0.9.5",
-    "async": "~0.2.10",
+    "carto": "~0.11.0",
+    "async": "~0.9.0",
     "underscore": "~1.6.0"
   },
   "peerDependencies": {

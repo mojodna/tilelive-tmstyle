@@ -1,5 +1,10 @@
 # Changes
 
+## v0.3.0 - 7/5/14
+
+* Upgrade to `carto-0.11.0`
+* Upgrade to `async-0.9.0`
+
 ## v0.2.0 - 7/5/14
 
 * Relax `tilelive` peer dependency

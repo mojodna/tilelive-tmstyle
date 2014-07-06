@@ -204,7 +204,17 @@ style.toXML = function(data, callback) {
         };
       });
 
-      new carto.Renderer().render(tm.sortkeys(opts), callback);
+      try {
+        return callback(null, new carto.Renderer().render(tm.sortkeys(opts)));
+      } catch (err) {
+        if (Array.isArray(err)) {
+          err.forEach(function(e) {
+            carto.writeError(e, options);
+          });
+        } else {
+          return callback(err);
+        }
+      }
     });
   });
 };
