@@ -1,5 +1,10 @@
 # Changes
 
+## v0.2.0 - 7/5/14
+
+* Relax `tilelive` peer dependency
+* Upgrade to `tilelive-vector-2.0.2`
+
 ## v0.1.2 - 5/22/14
 
 * Upgrade to `tilelive-vector-0.13.0` with scale-dependent sizes
