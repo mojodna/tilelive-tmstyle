@@ -1,5 +1,9 @@
 # Changes
 
+## v0.3.1 - 1/15/15
+
+* Relax dependency on `tilelive-vector`
+
 ## v0.3.0 - 7/5/14
 
 * Upgrade to `carto-0.11.0`
