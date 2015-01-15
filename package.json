@@ -11,10 +11,10 @@
     "url": "https://github.com/mojodna/tilelive-tmstyle.git"
   },
   "dependencies": {
-    "js-yaml": "~3.0.2",
-    "carto": "~0.11.0",
+    "js-yaml": "~3.2.5",
+    "carto": "~0.14.0",
     "async": "~0.9.0",
-    "underscore": "~1.6.0"
+    "underscore": "~1.7.0"
   },
   "peerDependencies": {
     "tilelive": "*",

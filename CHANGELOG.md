@@ -1,8 +1,9 @@
 # Changes
 
-## v0.3.1 - 1/15/15
+## v0.4.0 - 1/15/15
 
 * Relax dependency on `tilelive-vector`
+* Upgrade dependencies
 
 ## v0.3.0 - 7/5/14
 
