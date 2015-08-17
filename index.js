@@ -43,23 +43,25 @@ tm.srs = {
 
 // Return an object with sorted keys, ignoring case.
 tm.sortkeys = function(obj) {
-  try {
+  if (Array.isArray(obj)) {
     return obj.map(tm.sortkeys);
-  } catch(e) {};
-  try {
-    return Object.keys(obj).sort(function(a, b) {
-      a = a.toLowerCase();
-      b = b.toLowerCase();
-      if (a === 'id') return -1;
-      if (b === 'id') return 1;
-      if (a > b) return 1;
-      if (a < b) return -1;
-      return 0;
-    }).reduce(function(memo, key) {
-      memo[key] = tm.sortkeys(obj[key]);
-      return memo;
-    }, {});
-  } catch(e) { return obj };
+  }
+  if (typeof obj !== 'object' || !obj) {
+    return obj;
+  }
+
+  return Object.keys(obj).sort(function(a, b) {
+    a = a.toLowerCase();
+    b = b.toLowerCase();
+    if (a === 'id') return -1;
+    if (b === 'id') return 1;
+    if (a > b) return 1;
+    if (a < b) return -1;
+    return 0;
+  }).reduce(function(memo, key) {
+    memo[key] = tm.sortkeys(obj[key]);
+    return memo;
+  }, {});
 };
 
 var style = function(uri, callback) {
