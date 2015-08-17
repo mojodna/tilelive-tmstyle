@@ -1,5 +1,9 @@
 # Changes
 
+## v0.4.1 - 8/17/15
+
+* Performance improvements to `tm.sortkeys` (@calvinmetcalf)
+
 ## v0.4.0 - 1/15/15
 
 * Relax dependency on `tilelive-vector`
