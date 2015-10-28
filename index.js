@@ -112,7 +112,7 @@ style.prototype.info = function(callback) {
 
     return async.map(data.styles, function(filename, next) {
       return fs.readFile(path.join(path.dirname(fname), filename), "utf8", function(err, mss) {
-        return next(null, [filename, mss]);
+        return next(err, [filename, mss]);
       });
     }, function(err, styles) {
       if (err) {
