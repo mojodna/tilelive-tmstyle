@@ -1,5 +1,10 @@
 # Changes
 
+## v0.4.2 - 10/28/15
+
+* Remove unnecessary key sorting when generating Mapnik XML
+* Pass errors related to failed file reads
+
 ## v0.4.1 - 8/17/15
 
 * Performance improvements to `tm.sortkeys` (@calvinmetcalf)
