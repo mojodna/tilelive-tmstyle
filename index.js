@@ -41,29 +41,6 @@ tm.srs = {
   '900913': '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs +over'
 };
 
-// Return an object with sorted keys, ignoring case.
-tm.sortkeys = function(obj) {
-  if (Array.isArray(obj)) {
-    return obj.map(tm.sortkeys);
-  }
-  if (typeof obj !== 'object' || !obj) {
-    return obj;
-  }
-
-  return Object.keys(obj).sort(function(a, b) {
-    a = a.toLowerCase();
-    b = b.toLowerCase();
-    if (a === 'id') return -1;
-    if (b === 'id') return 1;
-    if (a > b) return 1;
-    if (a < b) return -1;
-    return 0;
-  }).reduce(function(memo, key) {
-    memo[key] = tm.sortkeys(obj[key]);
-    return memo;
-  }, {});
-};
-
 var style = function(uri, callback) {
   uri = url.parse(uri || "");
   uri.query = uri.query || {};
@@ -207,7 +184,7 @@ style.toXML = function(data, callback) {
       });
 
       try {
-        return callback(null, new carto.Renderer().render(tm.sortkeys(opts)));
+        return callback(null, new carto.Renderer().render(opts));
       } catch (err) {
         if (Array.isArray(err)) {
           err.forEach(function(e) {
