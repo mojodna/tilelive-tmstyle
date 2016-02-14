@@ -47,6 +47,7 @@ var style = function(uri, callback) {
 
   var fname = this.filename = path.join(uri.hostname + uri.pathname, "project.yml");
 
+  var self = this;
   return this.info(function(err, data) {
     if (err) {
       return callback(err);
@@ -67,11 +68,25 @@ var style = function(uri, callback) {
         scale: data.scale
       };
 
-      return tilelive.load(opts, callback);
+      return tilelive.load(opts, function(err, source) {
+          if (err) {
+              return callback(err);
+          }
+
+          self.source = source;
+          return callback(null, source);
+      });
     });
   });
 };
 
+style.prototype.close = function(callback) {
+    if (typeof this.source.close === 'function') {
+        return this.source.close(callback);
+    }
+
+    return callback(null);
+};
 
 style.prototype.info = function(callback) {
   var fname = this.filename;
@@ -183,17 +198,26 @@ style.toXML = function(data, callback) {
         };
       });
 
-      try {
-        return callback(null, new carto.Renderer().render(opts));
-      } catch (err) {
-        if (Array.isArray(err)) {
-          err.forEach(function(e) {
-            carto.writeError(e, options);
-          });
-        } else {
-          return callback(err);
+      function createRenderer(err) {
+        if (err) return callback(err);
+
+        try {
+          return callback(null, new carto.Renderer().render(opts));
+        } catch (err) {
+          if (Array.isArray(err)) {
+            err.forEach(function(e) {
+              carto.writeError(e, options);
+            });
+          } else {
+            return callback(err);
+          }
         }
       }
+
+      if (typeof backend.close === 'function') {
+        return backend.close(createRenderer);
+      }
+      return createRenderer(null);
     });
   });
 };
