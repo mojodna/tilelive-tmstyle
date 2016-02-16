@@ -183,6 +183,12 @@ style.toXML = function(data, callback) {
         };
       });
 
+      // close the backend source if possible
+      if (backend.close) {
+        // some close() implementations require a callback
+        backend.close(function() {});
+      }
+
       try {
         return callback(null, new carto.Renderer().render(opts));
       } catch (err) {
