@@ -1,5 +1,10 @@
 # Changes
 
+## v0.5.0 - 2/16/16
+
+* Close backend source (before `tilelive-cache@0.6.0` this will result in closed
+  (unusable) sources being loaded)
+
 ## v0.4.2 - 10/28/15
 
 * Remove unnecessary key sorting when generating Mapnik XML
