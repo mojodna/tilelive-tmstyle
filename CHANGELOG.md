@@ -1,5 +1,9 @@
 # Changes
 
+## v0.5.1 - 2/18/16
+
+* Support kosmtik-compatible projects
+
 ## v0.5.0 - 2/16/16
 
 * Close backend source (before `tilelive-cache@0.6.0` this will result in closed
