@@ -164,7 +164,7 @@ style.toXML = function(data, callback) {
       opts.srs = tm.srs['900913'];
 
       // Convert datatiles sources to mml layers.
-      opts.Layer = _(backend.data.vector_layers).map(function(layer) {
+      var layerToDef = function(layer) {
         return {
           id: layer.id,
           name: layer.id,
@@ -174,7 +174,24 @@ style.toXML = function(data, callback) {
           properties: (data._properties && data._properties[layer.id]) || {},
           srs: tm.srs['900913']
         };
-      });
+      };
+
+      if(data.layers) { 
+        //Layer ordering defined in style
+        opts.Layer = data.layers.map(function(layerId) {
+          for(var i = 0; i < backend.data.vector_layers.length; i++) {
+            var layer = backend.data.vector_layers[i];
+            if(layer.id == layerId) {
+              return layerToDef(layer);
+            }
+          }
+        });
+      } else {
+        // Use layer ordering from source
+        opts.Layer = _(backend.data.vector_layers).map(function(layer) {
+          return layerToDef(layer);
+        });
+      }
 
       opts.Stylesheet = _(data.styles).map(function(style,basename) {
         return {
