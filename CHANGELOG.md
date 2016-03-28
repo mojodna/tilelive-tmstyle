@@ -1,5 +1,9 @@
 # Changes
 
+## v0.6.0 - 3/28/16
+
+* Use layer ordering if present (@JesseCrocker)
+
 ## v0.5.1 - 2/18/16
 
 * Support kosmtik-compatible projects
