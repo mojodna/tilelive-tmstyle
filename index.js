@@ -235,8 +235,9 @@ function resolveTileliveUri(fromUri, toUri) {
 
   // Url.parse reads the first ".." as the hostname
   const toUriPathName = path.join(toUri.hostname, toUri.path);
+  const fromUriPathName = path.join(fromUri.hostname, fromUri.path);
 
-  return toUri.protocol + '//' + path.resolve(fromUri.pathname, toUriPathName);
+  return toUri.protocol + '//' + path.resolve(fromUriPathName, toUriPathName);
 }
 
 module.exports = function(_tilelive, options) {
