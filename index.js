@@ -89,12 +89,12 @@ style.prototype.info = function(callback) {
       .map(filename => co(function* () {
         const mssPath = path.join(path.dirname(fname), filename);
         const mss = yield cb => fs.readFile(mssPath, "utf8", cb);
-        return [filename, mss];
+        return {filename, mss};
       }));
 
     // Assign mss files contents to `info`
     info.styles = {};
-    styles.forEach((x => info.styles[x[0]] = x[1]));
+    styles.forEach((styl => info.styles[styl.filename] = styl.mss));
 
     // Assign defaults to `info`
     Object.keys(defaults)
