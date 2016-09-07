@@ -13,7 +13,7 @@ require('tilelive-vector').registerProtocols(tilelive);
 describe('tilelive-tmstyle', function() {
   var projectYamlOrig;
 
-  before(function() {
+  beforeEach(function() {
     projectYamlOrig = fs.readFileSync(fixturePath('cities.tm2/project.yml'), 'utf8');
 
     // Assign 'FIXTURE_DIR' to absolute path
