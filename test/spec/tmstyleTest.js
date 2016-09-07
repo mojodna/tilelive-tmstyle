@@ -1,8 +1,8 @@
-var tilelive = require('tilelive');
-var tmstyle = require('../../');
-var path = require('path');
-var fs = require('fs');
-var assert = require('assert');
+const tilelive = require('tilelive');
+const tmstyle = require('../../');
+const path = require('path');
+const fs = require('fs');
+const assert = require('assert');
 
 // Register tilelive modules
 tmstyle(tilelive);
@@ -35,7 +35,7 @@ describe('tilelive-tmstyle', function() {
   describe('integration with tilelive-tmsource', function() {
     
     it('should getInfo()', function(done) {
-      var expectedInfo = {
+      const expectedInfo = {
         attribution: "Attribution Text",
         bounds: [
           -180,
@@ -89,7 +89,7 @@ describe('tilelive-tmstyle', function() {
             }
 
             try {
-              var tileFixture = fs.readFileSync(fixturePath('cities_0_0_0.png'));
+              const tileFixture = fs.readFileSync(fixturePath('cities_0_0_0.png'));
               assert(tile.equals(tileFixture), 'should match a previously generated tile image');
               done();
             }
