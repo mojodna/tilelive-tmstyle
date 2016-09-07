@@ -10,14 +10,23 @@
     "type": "git",
     "url": "https://github.com/mojodna/tilelive-tmstyle.git"
   },
+  "scripts": {
+    "test": "mocha --recursive -t 60000 test/spec"
+  },
   "dependencies": {
-    "js-yaml": "~3.2.5",
     "carto": "~0.14.0",
-    "async": "~0.9.0",
+    "js-yaml": "~3.2.5",
     "underscore": "~1.7.0"
   },
   "peerDependencies": {
     "tilelive": "*",
     "tilelive-vector": ">=2.0.0"
+  },
+  "devDependencies": {
+    "co": "^4.6.0",
+    "mocha": "^3.0.2",
+    "tilelive": "^5.12.2",
+    "tilelive-tmsource": "^0.5.0",
+    "tilelive-vector": "^3.9.3"
   }
 }

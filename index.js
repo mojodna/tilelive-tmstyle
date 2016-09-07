@@ -1,18 +1,18 @@
 "use strict";
 
-var fs = require("fs"),
+const fs = require("fs"),
     path = require("path"),
     url = require("url");
 
-var _ = require("underscore"),
-    async = require("async"),
+const _ = require("underscore"),
+    co = require("co"),
     carto = require("carto"),
     yaml = require("js-yaml");
 
 // lazy-load when initialized (to share a common tilelive)
 var tilelive;
 
-var defaults = {
+const defaults = {
   name:'',
   description:'',
   attribution:'',
@@ -42,103 +42,92 @@ tm.srs = {
 };
 
 var style = function(uri, callback) {
-  uri = url.parse(uri || "");
-  uri.query = uri.query || {};
+  return co(function* () {
+    uri = url.parse(uri || "");
+    uri.query = uri.query || {};
 
-  var fname = this.filename = path.join(uri.hostname + uri.pathname, "project.yml");
+    const fname = this.filename = path.join(uri.hostname + uri.pathname, "project.yml");
 
-  return this.info(function(err, data) {
-    if (err) {
-      return callback(err);
-    }
+    const data = yield cb => this.info(cb);
 
     // override properties if necessary
     data.scale = +uri.query.scale || data.scale;
 
-    return style.toXML(data, function(err, xml) {
-      if (err) {
-        return callback(err);
-      }
+    const xml = yield cb => style.toXML(data, cb);
 
-      var opts = {
-        protocol: "vector:",
-        xml: xml,
-        base: path.dirname(fname),
-        scale: data.scale
-      };
+    const opts = {
+      protocol: "vector:",
+      xml: xml,
+      base: path.dirname(fname),
+      scale: data.scale
+    };
 
-      return tilelive.load(opts, callback);
-    });
-  });
+    const tileSource = yield cb => tilelive.load(opts, cb);
+    return tileSource;
+  }.bind(this))
+    .then(tileSource => callback(null, tileSource), err => callback(err));
+
 };
 
 
 style.prototype.info = function(callback) {
-  var fname = this.filename;
-
-  return fs.readFile(fname, "utf8", function(err, data) {
-    if (err) {
-      return callback(err);
+  const fname = this.filename;
+  return co(function*() {
+    // Load project.yml file
+    const yamlStr = yield cb => fs.readFile(fname, "utf8", cb);
+    const info = yaml.load(yamlStr);
+    if (!info) {
+      throw new Error(`Project file is invalid: ${fname}`);
     }
 
-    try {
-      data = yaml.load(data);
-    } catch (e) {
-      return callback(e);
-    }
+    // Load *.mss files
+    const styles = yield (info.styles || info.Stylesheet)
+      .map(filename => co(function* () {
+        const mssPath = path.join(path.dirname(fname), filename);
+        const mss = yield cb => fs.readFile(mssPath, "utf8", cb);
+        return {filename, mss};
+      }));
 
-    return async.map(data.styles || data.Stylesheet, function(filename, next) {
-      return fs.readFile(path.join(path.dirname(fname), filename), "utf8", function(err, mss) {
-        return next(err, [filename, mss]);
-      });
-    }, function(err, styles) {
-      if (err) {
-        return callback(err);
-      }
+    // Assign mss files contents to `info`
+    info.styles = {};
+    styles.forEach((styl => info.styles[styl.filename] = styl.mss));
 
-      data.styles = {};
+    // Assign defaults to `info`
+    Object.keys(defaults)
+      .forEach(k => info[k] = info[k] || defaults[k]);
 
-      styles.forEach(function(x) {
-        data.styles[x[0]] = x[1];
-      });
-
-      Object.keys(defaults).forEach(function(k) {
-        data[k] = data[k] || defaults[k];
-      });
-
-      return callback(null, data);
-    });
-  });
+    return info;
+  })
+    .then((info) => callback(null, info), err => callback(err));
 };
 
 // Render data to XML.
 style.toXML = function(data, callback) {
-  return tilelive.load(data.source, function(err, backend) {
-    if (err) return callback(err);
+  return co(function* () {
+    // Load backend
+    const backend = yield cb => tilelive.load(data.source, cb);
 
-    return backend.getInfo(function(err, info) {
-      if (err) return callback(err);
+    const info = yield cb => backend.getInfo(cb);
+    backend.data = info;
 
-      backend.data = info;
-
-      // Include params to be written to XML.
-      var opts = [
-        'name',
-        'description',
-        'attribution',
-        'bounds',
-        'center',
-        'format',
-        'minzoom',
-        'maxzoom',
-        'scale',
-        'source',
-        'template',
-        'interactivity_layer',
-        'legend'
-      ].reduce(function(memo, key) {
-        if (key in data) {
-          switch(key) {
+    // Include params to be written to XML.
+    const opts = [
+      'name',
+      'description',
+      'attribution',
+      'bounds',
+      'center',
+      'format',
+      'minzoom',
+      'maxzoom',
+      'scale',
+      'source',
+      'template',
+      'interactivity_layer',
+      'legend'
+    ].reduce(function(memo, key) {
+      if (key in data) {
+        switch (key) {
           // @TODO this is backwards because carto currently only allows the
           // TM1 abstrated representation of these params. Add support in
           // carto for "literal" definition of these fields.
@@ -148,77 +137,70 @@ style.toXML = function(data, callback) {
             var fields = data.template.match(/{{([a-z0-9\-_]+)}}/ig);
             if (!fields) break;
             memo['interactivity'] = {
-                layer: data[key],
-                fields: fields.map(function(t) { return t.replace(/[{}]+/g,''); })
+              layer: data[key],
+              fields: fields.map(function(t) {
+                return t.replace(/[{}]+/g, '');
+              })
             };
             break;
           default:
             memo[key] = data[key];
             break;
-          }
-        }
-        return memo;
-      }, {});
-
-      // Set projection for Mapnik.
-      opts.srs = tm.srs['900913'];
-
-      // Convert datatiles sources to mml layers.
-      var layerToDef = function(layer) {
-        return {
-          id: layer.id,
-          name: layer.id,
-          // Styles can provide a hidden _properties key with
-          // layer-specific property overrides. Current workaround to layer
-          // properties that could (?) eventually be controlled via carto.
-          properties: (data._properties && data._properties[layer.id]) || {},
-          srs: tm.srs['900913']
-        };
-      };
-
-      if(data.layers) { 
-        //Layer ordering defined in style
-        opts.Layer = data.layers.map(function(layerId) {
-          for(var i = 0; i < backend.data.vector_layers.length; i++) {
-            var layer = backend.data.vector_layers[i];
-            if(layer.id == layerId) {
-              return layerToDef(layer);
-            }
-          }
-        });
-      } else {
-        // Use layer ordering from source
-        opts.Layer = _(backend.data.vector_layers).map(function(layer) {
-          return layerToDef(layer);
-        });
-      }
-
-      opts.Stylesheet = _(data.styles).map(function(style,basename) {
-        return {
-          id: basename,
-          data: style
-        };
-      });
-
-      // close the backend source if possible
-      if (backend.close) {
-        // some close() implementations require a callback
-        backend.close(function() {});
-      }
-
-      try {
-        return callback(null, new carto.Renderer().render(opts));
-      } catch (err) {
-        if (Array.isArray(err)) {
-          err.forEach(function(e) {
-            carto.writeError(e, options);
-          });
-        } else {
-          return callback(err);
         }
       }
+      return memo;
+    }, {});
+
+    // Set projection for Mapnik.
+    opts.srs = tm.srs['900913'];
+
+    // Convert datatiles sources to mml layers.
+    const layerToDef = (layer) => ({
+      id: layer.id,
+      name: layer.id,
+      // Styles can provide a hidden _properties key with
+      // layer-specific property overrides. Current workaround to layer
+      // properties that could (?) eventually be controlled via carto.
+      properties: (data._properties && data._properties[layer.id]) || {},
+      srs: tm.srs['900913']
     });
-  });
+
+    opts.Layer = data.layers ?
+      // Layer ordering defined in style
+      data.layers.map(layerId => {
+        const vectorLayer = backend.data.vector_layers
+          .find(vLayer => vLayer.id === layerId)
+        return layerToDef(vectorLayer);
+      }) :
+      // Use layer ordering from source
+      _(backend.data.vector_layers).map(layer => layerToDef(layer));
+
+    opts.Stylesheet = _(data.styles).map((style, basename) => ({
+      id: basename,
+      data: style
+    }));
+
+    // close the backend source if possible
+    if (backend.close) {
+      // some close() implementations require a callback
+      backend.close(() => {});
+    }
+
+    try {
+      return new carto.Renderer().render(opts);
+    }
+    catch (err) {
+      if (Array.isArray(err)) {
+        err.forEach((err) => {
+          carto.writeError(err, options);
+        });
+        throw err[0];
+      } else {
+        throw err;
+      }
+    }
+  }.bind(this))
+    .then(xml => callback(null, xml), err => callback(err));
 };
 
 style.registerProtocols = function(tilelive) {

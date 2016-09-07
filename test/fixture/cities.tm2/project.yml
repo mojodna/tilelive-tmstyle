@@ -1,0 +1,26 @@
+name: cities
+description: Cities
+source: 'tmsource://{{FIXTURE_DIR}}/cities.tm2source'
+styles:
+  - city-labels.mss
+_prefs:
+  saveCenter: false
+_properties:
+  bridge:
+    group-by: layer
+attribution: Attribution Text
+bounds:
+  - -180
+  - -85.0511
+  - 180
+  - 85.0511
+center:
+  - 40
+  - -20
+  - 4
+format: 'png8:m=h:c=128'
+interactivity_layer: ''
+layers: null
+maxzom: 22
+minzoom: 0
+template: ''

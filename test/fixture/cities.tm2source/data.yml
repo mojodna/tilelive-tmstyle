@@ -1,0 +1,25 @@
+name: cities
+description: City names and locations
+Layer:
+  - id: cities
+    description: City names and locations
+    fields: []
+    properties:
+      buffer-size: 2048
+    srs: +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs
+    Datasource:
+      file: cities.csv
+      type: csv
+_prefs:
+  disabled: []
+  inspector: false
+  mapid: ''
+  rev: ''
+  saveCenter: false
+attribution: Attribution Text
+maxzoom: 22
+minzoom: 0
+center:
+  - 40
+  - -90
+  - 4
