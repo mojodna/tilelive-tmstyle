@@ -5,7 +5,6 @@ const fs = require("fs"),
     url = require("url");
 
 const _ = require("underscore"),
-    async = require("async"),
     co = require("co"),
     carto = require("carto"),
     yaml = require("js-yaml");
