@@ -104,33 +104,31 @@ style.prototype.info = function(callback) {
 
 // Render data to XML.
 style.toXML = function(data, callback) {
+  return co(function* () {
+    // Load backend
+    const backend = yield cb => tilelive.load(data.source, cb);
 
-  return tilelive.load(data.source, function(err, backend) {
-    if (err) return callback(err);
+    const info = yield cb => backend.getInfo(cb);
+    backend.data = info;
 
-    return backend.getInfo(function(err, info) {
-      if (err) return callback(err);
-
-      backend.data = info;
-
-      // Include params to be written to XML.
-      var opts = [
-        'name',
-        'description',
-        'attribution',
-        'bounds',
-        'center',
-        'format',
-        'minzoom',
-        'maxzoom',
-        'scale',
-        'source',
-        'template',
-        'interactivity_layer',
-        'legend'
-      ].reduce(function(memo, key) {
-        if (key in data) {
-          switch(key) {
+    // Include params to be written to XML.
+    const opts = [
+      'name',
+      'description',
+      'attribution',
+      'bounds',
+      'center',
+      'format',
+      'minzoom',
+      'maxzoom',
+      'scale',
+      'source',
+      'template',
+      'interactivity_layer',
+      'legend'
+    ].reduce(function(memo, key) {
+      if (key in data) {
+        switch (key) {
           // @TODO this is backwards because carto currently only allows the
           // TM1 abstrated representation of these params. Add support in
           // carto for "literal" definition of these fields.
@@ -140,77 +138,70 @@ style.toXML = function(data, callback) {
             var fields = data.template.match(/{{([a-z0-9\-_]+)}}/ig);
             if (!fields) break;
             memo['interactivity'] = {
-                layer: data[key],
-                fields: fields.map(function(t) { return t.replace(/[{}]+/g,''); })
+              layer: data[key],
+              fields: fields.map(function(t) {
+                return t.replace(/[{}]+/g, '');
+              })
             };
             break;
           default:
             memo[key] = data[key];
             break;
-          }
-        }
-        return memo;
-      }, {});
-
-      // Set projection for Mapnik.
-      opts.srs = tm.srs['900913'];
-
-      // Convert datatiles sources to mml layers.
-      var layerToDef = function(layer) {
-        return {
-          id: layer.id,
-          name: layer.id,
-          // Styles can provide a hidden _properties key with
-          // layer-specific property overrides. Current workaround to layer
-          // properties that could (?) eventually be controlled via carto.
-          properties: (data._properties && data._properties[layer.id]) || {},
-          srs: tm.srs['900913']
-        };
-      };
-
-      if(data.layers) { 
-        //Layer ordering defined in style
-        opts.Layer = data.layers.map(function(layerId) {
-          for(var i = 0; i < backend.data.vector_layers.length; i++) {
-            var layer = backend.data.vector_layers[i];
-            if(layer.id == layerId) {
-              return layerToDef(layer);
-            }
-          }
-        });
-      } else {
-        // Use layer ordering from source
-        opts.Layer = _(backend.data.vector_layers).map(function(layer) {
-          return layerToDef(layer);
-        });
-      }
-
-      opts.Stylesheet = _(data.styles).map(function(style,basename) {
-        return {
-          id: basename,
-          data: style
-        };
-      });
-
-      // close the backend source if possible
-      if (backend.close) {
-        // some close() implementations require a callback
-        backend.close(function() {});
-      }
-
-      try {
-        return callback(null, new carto.Renderer().render(opts));
-      } catch (err) {
-        if (Array.isArray(err)) {
-          err.forEach(function(e) {
-            carto.writeError(e, options);
-          });
-        } else {
-          return callback(err);
         }
       }
+      return memo;
+    }, {});
+
+    // Set projection for Mapnik.
+    opts.srs = tm.srs['900913'];
+
+    // Convert datatiles sources to mml layers.
+    const layerToDef = (layer) => ({
+      id: layer.id,
+      name: layer.id,
+      // Styles can provide a hidden _properties key with
+      // layer-specific property overrides. Current workaround to layer
+      // properties that could (?) eventually be controlled via carto.
+      properties: (data._properties && data._properties[layer.id]) || {},
+      srs: tm.srs['900913']
     });
-  });
+
+    opts.Layer = data.layers ?
+      // Layer ordering defined in style
+      data.layers.map(layerId => {
+        const vectorLayer = backend.data.vector_layers
+          .find(vLayer => vLayer.id === layerId)
+        return layerToDef(vectorLayer);
+      }) :
+      // Use layer ordering from source
+      _(backend.data.vector_layers).map(layer => layerToDef(layer));
+
+    opts.Stylesheet = _(data.styles).map((style, basename) => ({
+      id: basename,
+      data: style
+    }));
+
+    // close the backend source if possible
+    if (backend.close) {
+      // some close() implementations require a callback
+      backend.close(() => {});
+    }
+
+    try {
+      return new carto.Renderer().render(opts);
+    }
+    catch (err) {
+      if (Array.isArray(err)) {
+        err.forEach((err) => {
+          carto.writeError(err, options);
+        });
+        throw err[0];
+      } else {
+        throw err;
+      }
+    }
+  }.bind(this))
+    .then(xml => callback(null, xml), err => callback(err));
 };
 
 style.registerProtocols = function(tilelive) {
