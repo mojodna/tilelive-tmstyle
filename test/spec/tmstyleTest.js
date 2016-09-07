@@ -119,7 +119,7 @@ describe('tilelive-tmstyle', function() {
   });
 
   function fixturePath(fPath) {
-    return path.join(path.join(__dirname, '../fixture', fPath))
+    return path.join(__dirname, '../fixture', fPath)
   }
 
 });
