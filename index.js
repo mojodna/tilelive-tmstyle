@@ -87,6 +87,10 @@ style.prototype.info = function(callback) {
       return callback(e);
     }
 
+    if (!data) {
+      return callback(new Error('Project file is invalid: ' + fname));
+    }
+
     return async.map(data.styles || data.Stylesheet, function(filename, next) {
       return fs.readFile(path.join(path.dirname(fname), filename), "utf8", function(err, mss) {
         return next(err, [filename, mss]);

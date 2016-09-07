@@ -23,7 +23,7 @@ describe('tilelive-tmstyle', function() {
     );
   });
 
-  after(function() {
+  afterEach(function() {
     // Restore project.yml
     fs.writeFileSync(
       fixturePath('cities.tm2/project.yml'),
@@ -100,6 +100,21 @@ describe('tilelive-tmstyle', function() {
         }
       )
     });
+
+    it('should fail, if the yaml file is empty', function(done) {
+      fs.writeFileSync(fixturePath('cities.tm2/project.yml'), '');
+
+      tilelive.load(
+        'tmstyle://' + fixturePath('cities.tm2'),
+        function(err, tileSource) {
+          try {
+            assert.strictEqual(err && err.message, 'Project file is invalid: ' + fixturePath('cities.tm2/project.yml'));
+            done();
+          }
+          catch (err) { return done(err); }
+        }
+      );
+    })
     
   });
 
