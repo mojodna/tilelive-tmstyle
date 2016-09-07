@@ -43,34 +43,31 @@ tm.srs = {
 };
 
 var style = function(uri, callback) {
-  uri = url.parse(uri || "");
-  uri.query = uri.query || {};
+  return co(function* () {
+    uri = url.parse(uri || "");
+    uri.query = uri.query || {};
 
-  var fname = this.filename = path.join(uri.hostname + uri.pathname, "project.yml");
+    const fname = this.filename = path.join(uri.hostname + uri.pathname, "project.yml");
 
-  return this.info(function(err, data) {
-    if (err) {
-      return callback(err);
-    }
+    const data = yield cb => this.info(cb);
 
     // override properties if necessary
     data.scale = +uri.query.scale || data.scale;
 
-    return style.toXML(data, function(err, xml) {
-      if (err) {
-        return callback(err);
-      }
+    const xml = yield cb => style.toXML(data, cb);
 
-      var opts = {
-        protocol: "vector:",
-        xml: xml,
-        base: path.dirname(fname),
-        scale: data.scale
-      };
+    const opts = {
+      protocol: "vector:",
+      xml: xml,
+      base: path.dirname(fname),
+      scale: data.scale
+    };
 
-      return tilelive.load(opts, callback);
-    });
-  });
+    const tileSource = yield cb => tilelive.load(opts, cb);
+    return tileSource;
+  }.bind(this))
+    .then(tileSource => callback(null, tileSource), err => callback(err));
+
 };
 
 
@@ -107,6 +104,7 @@ style.prototype.info = function(callback) {
 
 // Render data to XML.
 style.toXML = function(data, callback) {
+
   return tilelive.load(data.source, function(err, backend) {
     if (err) return callback(err);
 
