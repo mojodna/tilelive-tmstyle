@@ -1,10 +1,10 @@
 "use strict";
 
-var fs = require("fs"),
+const fs = require("fs"),
     path = require("path"),
     url = require("url");
 
-var _ = require("underscore"),
+const _ = require("underscore"),
     async = require("async"),
     carto = require("carto"),
     yaml = require("js-yaml");
@@ -12,7 +12,7 @@ var _ = require("underscore"),
 // lazy-load when initialized (to share a common tilelive)
 var tilelive;
 
-var defaults = {
+const defaults = {
   name:'',
   description:'',
   attribution:'',
