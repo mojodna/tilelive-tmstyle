@@ -3,6 +3,7 @@ const tmstyle = require('../../');
 const path = require('path');
 const fs = require('fs');
 const assert = require('assert');
+const co = require('co');
 
 // Register tilelive modules
 tmstyle(tilelive);
@@ -34,7 +35,7 @@ describe('tilelive-tmstyle', function() {
   
   describe('integration with tilelive-tmsource', function() {
     
-    it('should getInfo()', function(done) {
+    it('should getInfo()', () => co(function*() {
       const expectedInfo = {
         attribution: "Attribution Text",
         bounds: [
@@ -57,64 +58,33 @@ describe('tilelive-tmstyle', function() {
         source: "tmsource://" + fixturePath('cities.tm2source')
       };
 
-      tilelive.load(
-        'tmstyle://' + fixturePath('cities.tm2'),
-        function(err, tileSource) {
-          if (err) { return done(err); }
+      const tileSource = yield cb => tilelive.load(`tmstyle://${fixturePath('cities.tm2')}`, cb);
+      const info = yield cb => tileSource.getInfo(cb);
 
-          tileSource.getInfo(function(err, info) {
-            if (err) { return done(err); }
+      assert.deepStrictEqual(info, expectedInfo, 'should retrieve tile source info');
+    }));
 
-            try {
-              assert.deepStrictEqual(info, expectedInfo, 'should retrieve tile source info');
-              done();
-            }
-            catch (err) { return done(err); }
-          })
-        }
-      );
-    });
+    it('should getTile()', () => co(function*() {
+      const tileSource = yield cb => tilelive.load(`tmstyle://${fixturePath('cities.tm2')}`, cb);
+      const tile = yield cb => tileSource.getTile(0, 0, 0, (err, tile) => cb(err, tile));
 
-    it('should getTile()', function(done) {
-      tilelive.load(
-        'tmstyle://' + fixturePath('cities.tm2'),
-        function(err, tileSource) {
-          if (err) {
-            return done(err);
-          }
+      const tileFixture = yield cb => fs.readFile(fixturePath('cities_0_0_0.png'), cb);
+      assert(tile.equals(tileFixture), 'should match a previously generated tile image');
+    }));
 
-          tileSource.getTile(0, 0, 0, function(err, tile) {
-            if (err) {
-              return done(err);
-            }
+    it('should fail, if the yaml file is empty', () => co(function*() {
+      // Override project.yml with an empty string
+      yield cb => fs.writeFile(fixturePath('cities.tm2/project.yml'), '', cb);
 
-            try {
-              const tileFixture = fs.readFileSync(fixturePath('cities_0_0_0.png'));
-              assert(tile.equals(tileFixture), 'should match a previously generated tile image');
-              done();
-            }
-            catch (err) {
-              return done(err);
-            }
-          })
-        }
-      )
-    });
-
-    it('should fail, if the yaml file is empty', function(done) {
-      fs.writeFileSync(fixturePath('cities.tm2/project.yml'), '');
-
-      tilelive.load(
-        'tmstyle://' + fixturePath('cities.tm2'),
-        function(err, tileSource) {
-          try {
-            assert.strictEqual(err && err.message, 'Project file is invalid: ' + fixturePath('cities.tm2/project.yml'));
-            done();
-          }
-          catch (err) { return done(err); }
-        }
-      );
-    })
+      try {
+        yield cb => tilelive.load(`tmstyle://${fixturePath('cities.tm2')}`, cb);
+      }
+      catch (err) {
+        assert.strictEqual(err.message, 'Project file is invalid: ' + fixturePath('cities.tm2/project.yml'));
+        return;
+      }
+      throw new Error(`tilelive.load should have thrown an error`);
+    }))
     
   });
 
