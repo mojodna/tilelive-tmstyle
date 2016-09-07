@@ -6,6 +6,7 @@ const fs = require("fs"),
 
 const _ = require("underscore"),
     async = require("async"),
+    co = require("co"),
     carto = require("carto"),
     yaml = require("js-yaml");
 
@@ -74,45 +75,34 @@ var style = function(uri, callback) {
 
 
 style.prototype.info = function(callback) {
-  var fname = this.filename;
-
-  return fs.readFile(fname, "utf8", function(err, data) {
-    if (err) {
-      return callback(err);
+  const fname = this.filename;
+  return co(function*() {
+    // Load project.yml file
+    const yamlStr = yield cb => fs.readFile(fname, "utf8", cb);
+    const info = yaml.load(yamlStr);
+    if (!info) {
+      throw new Error(`Project file is invalid: ${fname}`);
     }
 
-    try {
-      data = yaml.load(data);
-    } catch (e) {
-      return callback(e);
-    }
+    // Load *.mss files
+    const styles = yield (info.styles || info.Stylesheet)
+      .map(filename => co(function* () {
+        const mssPath = path.join(path.dirname(fname), filename);
+        const mss = yield cb => fs.readFile(mssPath, "utf8", cb);
+        return [filename, mss];
+      }));
 
-    if (!data) {
-      return callback(new Error('Project file is invalid: ' + fname));
-    }
+    // Assign mss files contents to `info`
+    info.styles = {};
+    styles.forEach((x => info.styles[x[0]] = x[1]));
 
-    return async.map(data.styles || data.Stylesheet, function(filename, next) {
-      return fs.readFile(path.join(path.dirname(fname), filename), "utf8", function(err, mss) {
-        return next(err, [filename, mss]);
-      });
-    }, function(err, styles) {
-      if (err) {
-        return callback(err);
-      }
+    // Assign defaults to `info`
+    Object.keys(defaults)
+      .forEach(k => info[k] = info[k] || defaults[k]);
 
-      data.styles = {};
-
-      styles.forEach(function(x) {
-        data.styles[x[0]] = x[1];
-      });
-
-      Object.keys(defaults).forEach(function(k) {
-        data[k] = data[k] || defaults[k];
-      });
-
-      return callback(null, data);
-    });
-  });
+    return info;
+  })
+    .then((info) => callback(null, info), err => callback(err));
 };
 
 // Render data to XML.
