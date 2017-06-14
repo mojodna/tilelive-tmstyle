@@ -1,5 +1,9 @@
 # Changes
 
+## v0.7.0 - 6/13/17
+
+* Update dependencies, peer and otherwise
+
 ## v0.6.0 - 3/28/16
 
 * Use layer ordering if present (@JesseCrocker)
