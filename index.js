@@ -42,15 +42,53 @@ tm.srs = {
 };
 
 var style = function(uri, callback) {
-  uri = url.parse(uri || "");
+  var self = this;
+  if (!uri || (typeof uri === 'string')) {
+    uri = url.parse(uri || "");
+  }
   uri.query = uri.query || {};
+  this.filename = path.join(uri.hostname + uri.pathname, "project.yml");
 
-  var fname = this.filename = path.join(uri.hostname + uri.pathname, "project.yml");
+  if (uri.yaml) {
+    return self.info(uri, uri.yaml, callback);
+  }
 
-  return this.info(function(err, data) {
+  return fs.readFile(this.filename, "utf8", function(err, data) {
     if (err) {
       return callback(err);
     }
+    return self.info(uri, data, callback);
+  });
+};
+
+
+style.prototype.info = function(uri, data, callback) {
+  var fname = this.filename;
+
+  try {
+    data = yaml.load(data);
+  } catch (e) {
+    return callback(e);
+  }
+
+  return async.map(data.styles || data.Stylesheet, function(filename, next) {
+    return fs.readFile(path.join(path.dirname(fname), filename), "utf8", function(err, mss) {
+      return next(err, [filename, mss]);
+    });
+  }, function(err, styles) {
+    if (err) {
+      return callback(err);
+    }
+
+    data.styles = {};
+
+    styles.forEach(function(x) {
+      data.styles[x[0]] = x[1];
+    });
+
+    Object.keys(defaults).forEach(function(k) {
+      data[k] = data[k] || defaults[k];
+    });
 
     // override properties if necessary
     data.scale = +uri.query.scale || data.scale;
@@ -68,45 +106,6 @@ var style = function(uri, callback) {
       };
 
       return tilelive.load(opts, callback);
-    });
-  });
-};
-
-
-style.prototype.info = function(callback) {
-  var fname = this.filename;
-
-  return fs.readFile(fname, "utf8", function(err, data) {
-    if (err) {
-      return callback(err);
-    }
-
-    try {
-      data = yaml.load(data);
-    } catch (e) {
-      return callback(e);
-    }
-
-    return async.map(data.styles || data.Stylesheet, function(filename, next) {
-      return fs.readFile(path.join(path.dirname(fname), filename), "utf8", function(err, mss) {
-        return next(err, [filename, mss]);
-      });
-    }, function(err, styles) {
-      if (err) {
-        return callback(err);
-      }
-
-      data.styles = {};
-
-      styles.forEach(function(x) {
-        data.styles[x[0]] = x[1];
-      });
-
-      Object.keys(defaults).forEach(function(k) {
-        data[k] = data[k] || defaults[k];
-      });
-
-      return callback(null, data);
     });
   });
 };
@@ -167,7 +166,6 @@ style.toXML = function(data, callback) {
       var layerToDef = function(layer) {
         return {
           id: layer.id,
-          name: layer.id,
           // Styles can provide a hidden _properties key with
           // layer-specific property overrides. Current workaround to layer
           // properties that could (?) eventually be controlled via carto.
