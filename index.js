@@ -166,7 +166,6 @@ style.toXML = function(data, callback) {
       var layerToDef = function(layer) {
         return {
           id: layer.id,
-          name: layer.id,
           // Styles can provide a hidden _properties key with
           // layer-specific property overrides. Current workaround to layer
           // properties that could (?) eventually be controlled via carto.
