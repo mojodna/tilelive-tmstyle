@@ -93,6 +93,9 @@ style.prototype.info = function(uri, data, callback) {
     // override properties if necessary
     data.scale = +uri.query.scale || data.scale;
 
+    // Resolve relative path to data source
+    data.source = resolveTileliveUri(uri, url.parse(data.source));
+
     return style.toXML(data, function(err, xml) {
       if (err) {
         return callback(err);
@@ -222,6 +225,18 @@ style.toXML = function(data, callback) {
 style.registerProtocols = function(tilelive) {
   tilelive.protocols["tmstyle:"] = this;
 };
+
+function resolveTileliveUri(fromUri, toUri) {
+  // Normalize uris
+  fromUri = url.parse(fromUri);
+  toUri = url.parse(toUri);
+
+  // Url.parse reads the first ".." as the hostname
+  const toUriPathName = path.join(toUri.hostname, toUri.path);
+  const fromUriPathName = path.join(fromUri.hostname, fromUri.path);
+
+  return toUri.protocol + '//' + path.resolve(fromUriPathName, toUriPathName);
+}
 
 module.exports = function(_tilelive, options) {
   tilelive = _tilelive;
